@@ -9,7 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 
-
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zgkvxtd.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -38,11 +37,10 @@ run().catch(console.dir);
 
 
 
-
 app.get('/', (req, res) => {
-    res.send('My Summer Camp is Running')
+    res.send('My SummerCamp is Running')
 });
 
 app.listen(port, () => {
-    console.log(`My Summer Camp is Running on port: ${port}`);
+    console.log(`My SummerCamp is Running on port: ${port}`);
 });
