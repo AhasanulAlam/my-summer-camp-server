@@ -26,9 +26,18 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const usersCollection = client.db("mySummerCampDB").collection("users");
         const classesCollection = client.db("mySummerCampDB").collection("classes");
         const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
         const cartCollection = client.db("mySummerCampDB").collection("carts");
+
+        // Create Users API
+        app.post('/users', async(req, res) =>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
 
         // Get All Classes Data API
         app.get('/classes', async (req, res) => {
@@ -44,11 +53,29 @@ async function run() {
 
 
         // carts collection related API
+        app.get('/carts', async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([]);
+            }
+            const query = { email: email };
+            const result = await cartCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // Add a selected class in to database
         app.post('/carts', async (req, res) => {
             const cartItem = req.body;
             cartItem.classItemId = new ObjectId(cartItem.classItemId);
-            console.log(cartItem);
             const result = await cartCollection.insertOne(cartItem);
+            res.send(result);
+        });
+
+        // Delete a selected class from cart
+        app.delete('/carts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await cartCollection.deleteOne(query);
             res.send(result);
         })
 
