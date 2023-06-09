@@ -27,12 +27,23 @@ async function run() {
         await client.connect();
 
         const classesCollection = client.db("mySummerCampDB").collection("classes");
+        const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
+        const cartCollection = client.db("mySummerCampDB").collection("carts");
 
         // Get All Classes Data API
         app.get('/classes', async(req, res) =>{
             const result = await classesCollection.find().toArray();
             res.send(result);
         });
+
+        // Get All Instructors Data API
+        app.get('/instructors', async(req, res) =>{
+            const result = await instructorsCollection.find().toArray();
+            res.send(result);
+        });
+
+
+        
 
 
 
