@@ -31,6 +31,12 @@ async function run() {
         const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
         const cartCollection = client.db("mySummerCampDB").collection("carts");
 
+        // Get User API
+        app.get('/users', async(req, res) =>{
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
+
         // Create Users API
         app.post('/users', async(req, res) =>{
             const user = req.body;
