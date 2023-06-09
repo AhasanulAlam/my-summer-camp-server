@@ -31,19 +31,25 @@ async function run() {
         const cartCollection = client.db("mySummerCampDB").collection("carts");
 
         // Get All Classes Data API
-        app.get('/classes', async(req, res) =>{
+        app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result);
         });
 
         // Get All Instructors Data API
-        app.get('/instructors', async(req, res) =>{
+        app.get('/instructors', async (req, res) => {
             const result = await instructorsCollection.find().toArray();
             res.send(result);
         });
 
 
-        
+        // carts collection related API
+        app.post('/carts', async (req, res) => {
+            const item = req.body;
+            console.log(item);
+            const result = await cartCollection.insertOne(item);
+            res.send(result);
+        })
 
 
 
