@@ -69,6 +69,18 @@ async function run() {
             next();
         }
 
+        // verifyInstructor Middleware with the mongodb connection
+        const verifyInstructor = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'instructor') {
+                return res.status(403).send({ error: true, message: 'forbidden access' });
+            }
+            next();
+        }
+
 
         // Get User API
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
@@ -89,9 +101,9 @@ async function run() {
         });
 
         // Delete Users API
-        app.delete('/users/:id', async(req, res) =>{
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
         })
@@ -106,7 +118,7 @@ async function run() {
             const user = await usersCollection.findOne(query);
             const result = { admin: user?.role === 'admin' }
             res.send(result);
-        })
+        });
 
         // Update User Admin Role API
         app.patch('/users/admin/:id', async (req, res) => {
@@ -122,9 +134,42 @@ async function run() {
         });
 
 
+        // Check Instructor role  API
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false })
+            }
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = { instructor: user?.role === 'instructor' }
+            res.send(result);
+        })
+
+        // Update User Instructor Role API
+        app.patch('/users/instructor/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+
         // Get All Classes Data API
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
+            res.send(result);
+        });
+
+        // Add a new Class in the DataBase API
+        app.post('/classes', async (req, res) => {
+            const newClass = req.body;
+            const result = await classesCollection.insertOne(newClass);
             res.send(result);
         });
 
