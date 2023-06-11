@@ -47,8 +47,8 @@ async function run() {
 
         const usersCollection = client.db("mySummerCampDB").collection("users");
         const classesCollection = client.db("mySummerCampDB").collection("classes");
-        // const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
         const cartCollection = client.db("mySummerCampDB").collection("carts");
+        const paymentCollection = client.db("mySummerCampDB").collection("payments");
 
 
         // JWT Token API
@@ -215,20 +215,34 @@ async function run() {
         });
 
         // Create Payment Intent
-        app.post('/create-payment-intent', async (req, res) =>{
-            const {price} = req.body;
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
             const amount = parseFloat(price * 100);
-
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: 'usd',
                 payment_method_types: ['card']
             });
             res.send({
-                clientSecret: paymentIntent.client_secret,
+                clientSecret: paymentIntent.client_secret
             });
         });
 
+        // Payment Update API
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+
+            payment.cartItemId = payment.cartItemId.map(item => new ObjectId(item))
+            payment.classItemId = payment.classItemId.map(item => new ObjectId(item))
+
+            const insertResult = await paymentCollection.insertOne(payment);
+
+            const query = { _id: { $in: payment.cartItemId.map(id => new ObjectId(id)) } }
+            const deleteResult = await cartCollection.deleteMany(query);
+
+            res.send({ insertResult, deleteResult });
+
+        })
 
 
         // Send a ping to confirm a successful connection
