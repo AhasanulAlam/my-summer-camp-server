@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -46,7 +47,7 @@ async function run() {
 
         const usersCollection = client.db("mySummerCampDB").collection("users");
         const classesCollection = client.db("mySummerCampDB").collection("classes");
-        const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
+        // const instructorsCollection = client.db("mySummerCampDB").collection("instructors");
         const cartCollection = client.db("mySummerCampDB").collection("carts");
 
 
@@ -167,15 +168,16 @@ async function run() {
         });
 
         // Add a new Class in the DataBase API
-        app.post('/classes', async (req, res) => {
+        app.post('/classes', verifyJWT, verifyInstructor, async (req, res) => {
             const newClass = req.body;
             const result = await classesCollection.insertOne(newClass);
             res.send(result);
         });
 
-        // Get All Instructors Data API
+        // Get All Instructors Data API (TODO: )
         app.get('/instructors', async (req, res) => {
-            const result = await instructorsCollection.find().toArray();
+            const query = { role: 'instructor' };
+            const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
 
@@ -210,7 +212,22 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const result = await cartCollection.deleteOne(query);
             res.send(result);
-        })
+        });
+
+        // Create Payment Intent
+        app.post('/create-payment-intent', async (req, res) =>{
+            const {price} = req.body;
+            const amount = parseFloat(price * 100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
 
 
 
