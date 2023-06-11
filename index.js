@@ -163,7 +163,12 @@ async function run() {
 
         // Get All Classes Data API
         app.get('/classes', async (req, res) => {
-            const result = await classesCollection.find().toArray();
+            const query = { classStatus: 'approved' };
+            const options = {                
+                sort: { price: -1 }
+              };
+
+            const result = await classesCollection.find(query, options).toArray();
             res.send(result);
         });
 
@@ -232,15 +237,29 @@ async function run() {
         app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
 
-            payment.cartItemId = payment.cartItemId.map(item => new ObjectId(item))
-            payment.classItemId = payment.classItemId.map(item => new ObjectId(item))
-
+            payment.cartItemId = payment.cartItemId.map(item => new ObjectId(item));
+            payment.classItemId = payment.classItemId.map(item => new ObjectId(item));
+            // 
             const insertResult = await paymentCollection.insertOne(payment);
 
+            // remove classes from cart
             const query = { _id: { $in: payment.cartItemId.map(id => new ObjectId(id)) } }
             const deleteResult = await cartCollection.deleteMany(query);
 
-            res.send({ insertResult, deleteResult });
+            // Update the class seats
+            const queryUpdate = { _id: { $in: payment.classItemId.map(id => new ObjectId(id)) } }
+            const updateDoc = {
+                $set: {
+                    enrolledSeats: 1
+                },
+                $inc: {
+                    availableSeats: -1
+                }
+            };
+
+            const UpdateResult = await classesCollection.updateOne(queryUpdate, updateDoc);
+
+            res.send({ insertResult, deleteResult, UpdateResult });
 
         })
 
