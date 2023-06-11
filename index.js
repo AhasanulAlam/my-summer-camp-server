@@ -161,7 +161,7 @@ async function run() {
         });
 
 
-        // Get All Classes Data API
+        // Get approved Classes for Class page Data API
         app.get('/classes', async (req, res) => {
             const query = { classStatus: 'approved' };
             const options = {                
@@ -169,6 +169,12 @@ async function run() {
               };
 
             const result = await classesCollection.find(query, options).toArray();
+            res.send(result);
+        });
+
+        // Get All Classes for Class page Data API
+        app.get('/manageclasses',verifyJWT, verifyAdmin, async (req, res) => {            
+            const result = await classesCollection.find().toArray();
             res.send(result);
         });
 
