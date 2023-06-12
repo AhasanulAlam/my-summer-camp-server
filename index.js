@@ -170,6 +170,16 @@ async function run() {
             const result = await classesCollection.find(query, options).toArray();
             res.send(result);
         });
+        // Get All the Popular Classes for Home page Data API
+        app.get('/popularclasses', async (req, res) => {
+            const query = { classStatus: 'approved' };
+            const options = {
+                sort: { enrolledSeats: -1 }
+
+            };
+            const result = await classesCollection.find(query, options).limit(6).toArray();
+            res.send(result);
+        });
 
         // Get All Classes for admin Class page Data API
         app.get('/manageclasses', verifyJWT, verifyAdmin, async (req, res) => {
@@ -241,10 +251,20 @@ async function run() {
             res.send(result);
         });
 
-        // Get All Instructors Data API (TODO: )
+        // Get All Instructors Data API
         app.get('/instructors', async (req, res) => {
             const query = { role: 'instructor' };
             const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // Get All Popular Instructors Data for Home API
+        app.get('/popularinstructors', async (req, res) => {
+            const query = { role: 'instructor' };
+            // const options = {
+            //     sort: { enrolledSeats: -1 }
+            // };
+            const result = await usersCollection.find(query).limit(6).toArray();
             res.send(result);
         });
 
