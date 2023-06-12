@@ -164,18 +164,45 @@ async function run() {
         // Get approved Classes for Class page Data API
         app.get('/classes', async (req, res) => {
             const query = { classStatus: 'approved' };
-            const options = {                
+            const options = {
                 sort: { price: -1 }
-              };
-
+            };
             const result = await classesCollection.find(query, options).toArray();
             res.send(result);
         });
 
-        // Get All Classes for Class page Data API
-        app.get('/manageclasses',verifyJWT, verifyAdmin, async (req, res) => {            
+        // Get All Classes for admin Class page Data API
+        app.get('/manageclasses', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result);
+        });
+
+        // Get All Classes for Instructor Class page Data API
+        app.get('/instructormanageclasses', verifyJWT, verifyInstructor, async (req, res) => {
+            const result = await classesCollection.find().toArray();
+            res.send(result);
+        });
+
+        // Get All Classes for Student Class page Data API
+        app.get('/studentmanageclasses', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const queryPayment = { email: decodedEmail };
+
+            const enrollClassResult = await paymentCollection.find(queryPayment).toArray();
+            const classItemIds = enrollClassResult.map(enrollClass => {
+                return {
+                    classItemId: enrollClass.classItemId[0].toString()
+                };
+            });
+            let myAllClassData = [];
+            const myClassData = classItemIds.map(async(myclass) => {
+                console.log("test",myclass);
+                const queryEnrollClass = { _id: new ObjectId(myclass.classItemId) }
+                const myEnrolledClasses = await classesCollection.findOne(queryEnrollClass);
+                return myEnrolledClasses;
+            })
+            myAllClassData = await Promise.all(myClassData);
+            res.send(myAllClassData);
         });
 
         // Add a new Class in the DataBase API
@@ -256,7 +283,7 @@ async function run() {
             const queryUpdate = { _id: { $in: payment.classItemId.map(id => new ObjectId(id)) } }
             const updateDoc = {
                 $set: {
-                    enrolledSeats: 1
+                    enrolledSeats: 1 //TODO: inc
                 },
                 $inc: {
                     availableSeats: -1
