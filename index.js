@@ -177,13 +177,42 @@ async function run() {
             res.send(result);
         });
 
+        // Update Class Approve Status API
+        app.patch('/class/approve/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    classStatus: 'approved'
+                },
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // Update Class Status update API
+        app.patch('/class/deny/:id', async (req, res) => {
+            const id = req.params.id;
+            const denyFeedBack = req.body;
+            const feedBack = denyFeedBack.feedBack;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {                
+                $set: {
+                    classStatus: 'denied',
+                    feedBack: feedBack
+                },
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
         // Get All Classes for Instructor Class page Data API
         app.get('/instructormanageclasses', verifyJWT, verifyInstructor, async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result);
         });
 
-        // Get All Classes for Student Class page Data API
+        // Get All Enrolled Classes for Student Class page Data API
         app.get('/studentmanageclasses', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const queryPayment = { email: decodedEmail };
@@ -282,7 +311,7 @@ async function run() {
             // Update the class seats
             const queryUpdate = { _id: { $in: payment.classItemId.map(id => new ObjectId(id)) } }
             const updateDoc = {
-                $set: {
+                $inc: {
                     enrolledSeats: 1 //TODO: inc
                 },
                 $inc: {
